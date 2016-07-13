@@ -2,15 +2,20 @@ package yinlei.com.okhttputils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.util.Map;
 
 import okhttp3.Callback;
+import okhttp3.FormBody;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 /**
- * 在此写用途
+ * OkHttpUtils工具类
  *
  * @version V1.0 <描述当前版本功能>
  * @FileName: OkHttpUtils.java
@@ -37,7 +42,7 @@ public class OkHttpUtils {
      * @param urlString
      * @return
      */
-    private static Request getRequestFromUrl(String urlString) {
+    private static Request buildGetRequest(String urlString) {
         Request request = new Request.Builder()
                 .url(urlString)
                 .build();
@@ -51,20 +56,21 @@ public class OkHttpUtils {
      * @return
      * @throws IOException
      */
-    private static Response getResponseFromUrl(String urlString) throws IOException {
-        Request request = getRequestFromUrl(urlString);
+    private static Response buildResponse(String urlString) throws IOException {
+        Request request = buildGetRequest(urlString);
         Response response = OK_HTTP_CLIENT.newCall(request).execute();
         return response;
     }
 
     /**
      * 获取responseBody对象
+     *
      * @param urlString
      * @return
      * @throws IOException
      */
-    private static ResponseBody getResponseBodyFromUrl(String urlString) throws IOException {
-        Response response = getResponseFromUrl(urlString);
+    private static ResponseBody buildResponseBofy(String urlString) throws IOException {
+        Response response = buildResponse(urlString);
         if (response.isSuccessful()) {//code >= 200 && code < 300
             ResponseBody responseBody = response.body();
             return responseBody;
@@ -74,13 +80,14 @@ public class OkHttpUtils {
 
     /**
      * 通过网路请求获取服务器端发过来的字符串
+     *
      * @param urlString
      * @return
      * @throws IOException
      */
     public static String loadStringFromUrl(String urlString) throws IOException {
-        ResponseBody responseBody = getResponseBodyFromUrl(urlString);
-        if (responseBody != null){
+        ResponseBody responseBody = buildResponseBofy(urlString);
+        if (responseBody != null) {
             return responseBody.string();
         }
         return null;
@@ -88,13 +95,14 @@ public class OkHttpUtils {
 
     /**
      * 通过网络请求获取字节数组
+     *
      * @param urlString
      * @return
      * @throws IOException
      */
     public static byte[] loadByteFromUrl(String urlString) throws IOException {
-        ResponseBody responseBody = getResponseBodyFromUrl(urlString);
-        if (responseBody != null){
+        ResponseBody responseBody = buildResponseBofy(urlString);
+        if (responseBody != null) {
             return responseBody.bytes();
         }
         return null;
@@ -102,13 +110,14 @@ public class OkHttpUtils {
 
     /**
      * 通过网络请求获取输出流
+     *
      * @param urlString
      * @return
      * @throws IOException
      */
     public static InputStream loadInputStreamFromUrl(String urlString) throws IOException {
-        ResponseBody responseBody = getResponseBodyFromUrl(urlString);
-        if (responseBody != null){
+        ResponseBody responseBody = buildResponseBofy(urlString);
+        if (responseBody != null) {
             return responseBody.byteStream();
         }
         return null;
@@ -123,13 +132,120 @@ public class OkHttpUtils {
 
     /**
      * 开启一个异步线程，通过实现异步方法实现数据的异步加载
+     *
      * @param urlString
      * @param callback
      */
-    public static void loadDataByNewThread(String urlString, Callback callback){
-        Request request = getRequestFromUrl(urlString);
+    public static void getDataAsync(String urlString, Callback callback) {
+        Request request = buildGetRequest(urlString);
+        OK_HTTP_CLIENT.newCall(request).enqueue(callback);
+
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    //POST同步网络请求和异步网络请求
+    //A：HTTP  POST提交键值对数据 ： 6步奏
+    //1 、往FormBody对象中放置键值对数据
+    //2、获取RequestBody请求体对象
+    //3、获取Request对象，将RequestBody放置到Request对象中
+    //4、获取Response对象
+    //5、获取ResponseBody队形
+    //6、从ResponseBody对象中获取服务器返回的数据
+    //////////////////////////////////////////////////////////////////////////////
+    //B: HTTP POST提交 JSON字符串数据 ： 6步奏
+    //1、定义MediaType对象
+    //其他和上面一样
+    //////////////////////////////////////////////////////////////////////////////
+    //C: HTTP POST上传文件数据 ： 6步奏
+    //1、往MultipartBuilder对象中写入上传文件及表单头信息
+    //其他和上面一样
+    //////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * post请求获取request
+     *
+     * @param urlString
+     * @param requestBody
+     * @return
+     */
+    private static Request buildPostRequest(String urlString, RequestBody requestBody) {
+        Request.Builder builder = new Request.Builder();
+        builder.url(urlString).post(requestBody);
+        return builder.build();
+    }
+
+    /**
+     * post网络请你去的是偶，获取字符串
+     *
+     * @param urlString
+     * @param requestBody
+     * @return
+     * @throws IOException
+     */
+    private static String postRequestBody(String urlString, RequestBody requestBody) throws IOException {
+        Request request = buildPostRequest(urlString, requestBody);
+        Response response = OK_HTTP_CLIENT.newCall(request).execute();
+        if (response.isSuccessful()) {
+            return response.body().string();
+        }
+        return null;
+    }
+
+    /**
+     * post网络请求发送键值对时候，获取RequestBody堆啊ing
+     *
+     * @param map
+     * @return
+     */
+    private static RequestBody buildRequestBody(Map<String, String> map) {
+        FormBody.Builder builder = new FormBody.Builder();
+        if (map.isEmpty() && map != null) {
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                builder.add(entry.getKey(), entry.getValue());
+            }
+        }
+        return builder.build();
+    }
+
+    /**
+     * post网络访问，提交键值对
+     *
+     * @param uslString
+     * @param map
+     * @return
+     * @throws IOException
+     */
+    public static String postKeyValuePair(String uslString, Map<String, String> map) throws IOException {
+        RequestBody requestBogy = buildRequestBody(map);
+        return postRequestBody(uslString, requestBogy);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //POST异步网络请求
+    //////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * post异步网络请求，提交requestBody对象
+     *
+     * @param urlString
+     * @param requestBody
+     * @param callback
+     */
+    private static void postRequestBodyAsync(String urlString, RequestBody requestBody, Callback callback) {
+        Request request = buildPostRequest(urlString, requestBody);
         OK_HTTP_CLIENT.newCall(request).enqueue(callback);
     }
 
+    /**
+     * post异步请求  提交键值对
+     *
+     * @param urlString
+     * @param map
+     * @param callback
+     */
+    public static void postKeyValuePairAsync(String urlString, Map<String, String> map, Callback callback) {
+        RequestBody requestBody = buildRequestBody(map);
+        postRequestBodyAsync(urlString, requestBody, callback);
+    }
 
 }
