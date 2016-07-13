@@ -1,12 +1,19 @@
 package yinlei.com.okhttputils;
 
+import android.support.annotation.NonNull;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.FileNameMap;
 import java.net.URI;
+import java.net.URLConnection;
 import java.util.Map;
 
 import okhttp3.Callback;
 import okhttp3.FormBody;
+import okhttp3.Headers;
+import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -199,7 +206,7 @@ public class OkHttpUtils {
      */
     private static RequestBody buildRequestBody(Map<String, String> map) {
         FormBody.Builder builder = new FormBody.Builder();
-        if (map.isEmpty() && map != null) {
+        if (!map.isEmpty() && map != null) {
             for (Map.Entry<String, String> entry : map.entrySet()) {
                 builder.add(entry.getKey(), entry.getValue());
             }
@@ -247,5 +254,69 @@ public class OkHttpUtils {
         RequestBody requestBody = buildRequestBody(map);
         postRequestBodyAsync(urlString, requestBody, callback);
     }
+
+    /**
+     * post同步上传文件以及其他表单控件  (也就是提交分块请求)
+     *
+     * @param urlString     网络地址
+     * @param map           键值对
+     * @param files         文件
+     * @param fromFieldName 文件名字
+     * @return
+     * @throws IOException
+     */
+    public static String postUploadFiles(String urlString, Map<String, String> map, File[] files, String[] fromFieldName) throws IOException {
+        RequestBody requestBody = buildRequestBody(map,files,fromFieldName);
+        return postRequestBody(urlString, requestBody);
+    }
+
+    /**
+     * 文件上传的RequestBody
+     *
+     * @param map
+     * @param files
+     * @param fromFieldName
+     * @return
+     */
+    private static RequestBody buildRequestBody(Map<String, String> map, File[] files, String[] fromFieldName) {
+        MultipartBody.Builder builder = new MultipartBody.Builder().setType(MultipartBody.FORM);
+        //第一部分提交  键值对信息
+        if (map != null && !map.isEmpty()) {
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                builder.addPart(Headers.of("Content-Disposition", "form-data;name=\"" + entry.getKey() + "\""), RequestBody.create(null, entry.getValue()));
+            }
+        }
+        //第二部分提交   上传文件数据
+        if (files != null) {
+            for (int i = 0; i < files.length; i++) {
+                File file = files[i];
+                String fileName = file.getName();
+                //添加file的input部分
+                RequestBody requestBody = RequestBody.create(MediaType.parse(getMimeType(fileName)), file);
+                builder.addPart(Headers.of("Content-Disposition", "form-data;name=\"" + fromFieldName[i] + "\";filename=\"" + fileName + "\""),
+                        requestBody);
+            }
+        }
+
+        return builder.build();
+
+    }
+
+    /**
+     * 获取文件的格式
+     *
+     * @param fileName
+     * @return
+     */
+    private static String getMimeType(String fileName) {
+
+        FileNameMap fileNameMap = URLConnection.getFileNameMap();
+        String contentTypeFor = fileNameMap.getContentTypeFor(fileName);
+        if (contentTypeFor == null) {
+            contentTypeFor = "applicaption/octet-stream";
+        }
+        return contentTypeFor;
+    }
+
 
 }
