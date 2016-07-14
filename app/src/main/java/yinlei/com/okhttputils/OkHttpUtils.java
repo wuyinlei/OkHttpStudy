@@ -76,7 +76,7 @@ public class OkHttpUtils {
      * @return
      * @throws IOException
      */
-    private static ResponseBody buildResponseBofy(String urlString) throws IOException {
+    private static ResponseBody buildResponseBody(String urlString) throws IOException {
         Response response = buildResponse(urlString);
         if (response.isSuccessful()) {//code >= 200 && code < 300
             ResponseBody responseBody = response.body();
@@ -93,7 +93,7 @@ public class OkHttpUtils {
      * @throws IOException
      */
     public static String loadStringFromUrl(String urlString) throws IOException {
-        ResponseBody responseBody = buildResponseBofy(urlString);
+        ResponseBody responseBody = buildResponseBody(urlString);
         if (responseBody != null) {
             return responseBody.string();
         }
@@ -108,7 +108,7 @@ public class OkHttpUtils {
      * @throws IOException
      */
     public static byte[] loadByteFromUrl(String urlString) throws IOException {
-        ResponseBody responseBody = buildResponseBofy(urlString);
+        ResponseBody responseBody = buildResponseBody(urlString);
         if (responseBody != null) {
             return responseBody.bytes();
         }
@@ -123,7 +123,7 @@ public class OkHttpUtils {
      * @throws IOException
      */
     public static InputStream loadInputStreamFromUrl(String urlString) throws IOException {
-        ResponseBody responseBody = buildResponseBofy(urlString);
+        ResponseBody responseBody = buildResponseBody(urlString);
         if (responseBody != null) {
             return responseBody.byteStream();
         }
@@ -182,7 +182,7 @@ public class OkHttpUtils {
     }
 
     /**
-     * post网络请你去的是偶，获取字符串
+     * post网络请求，获取字符串
      *
      * @param urlString
      * @param requestBody
@@ -199,7 +199,7 @@ public class OkHttpUtils {
     }
 
     /**
-     * post网络请求发送键值对时候，获取RequestBody堆啊ing
+     * post网络请求发送键值对时候，获取RequestBody对象
      *
      * @param map
      * @return
